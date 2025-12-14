@@ -1,0 +1,15 @@
+.btn {
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 0 14px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.primary { background: #6c5ce7; color: white; }
+.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.secondary {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.18);
+    color: inherit;
+}
