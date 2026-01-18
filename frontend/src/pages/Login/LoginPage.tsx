@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styles from "./LoginPage.module.css";
 import { Input } from "../../components/ui/Input/Input";
 import { Button } from "../../components/ui/Button/Button";
@@ -25,7 +25,6 @@ export function LoginPage() {
 
             localStorage.setItem("token", res.token);
 
-            // todo  — навигация
         } catch (err) {
             const msg = err instanceof Error ? err.message : "Ошибка входа";
             setFormError(msg);
@@ -35,8 +34,23 @@ export function LoginPage() {
     }
 
     function onGithubLogin() {
-        // todo вход через гитхаб
+        window.location.href = GITHUB_OAUTH_URL;
     }
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+        const error = params.get("error");
+
+        if (error) {
+            setFormError(`OAuth ошибка: ${error}`);
+        }
+
+        if (token) {
+            localStorage.setItem("token", token);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, []);
 
     return (
         <div className={styles.page}>
@@ -68,14 +82,12 @@ export function LoginPage() {
                     {loading ? "Входим..." : "Войти"}
                 </Button>
 
-                <div className={styles.divider}>
-                    <span>или</span>
-                </div>
-
                 <Button type="button" variant="secondary" onClick={onGithubLogin}>
                     Войти через GitHub
                 </Button>
             </form>
         </div>
+
+
     );
 }

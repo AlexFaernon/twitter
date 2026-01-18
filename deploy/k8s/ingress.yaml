@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+    - host: app.local
+      http:
+        paths:
+          - path: /()(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ui-login
+                port:
+                  number: 80
+          - path: /api/ums(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ums
+                port:
+                  number: 80
+          - path: /api/twitter(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: twitter
+                port:
+                  number: 80

@@ -1,53 +1,104 @@
 .page {
     min-height: 100vh;
-    display: grid;
-    place-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     padding: 24px;
-    background: radial-gradient(800px 400px at 20% 10%, rgba(108,92,231,0.35), transparent 60%),
-    radial-gradient(800px 400px at 80% 90%, rgba(0,184,148,0.25), transparent 60%),
-    #0b1020;
-    color: rgba(255,255,255,0.92);
+    background-color: #2c3e50;
+    color: #ecf0f1;
 }
 
 .card {
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #34495e;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.title {
+    margin: 0;
+    font-size: 24px;
+    text-align: center;
+    color: #ecf0f1;
+}
+
+.subtitle {
+    margin: 10px 0;
+    opacity: 0.8;
+    font-size: 14px;
+    text-align: center;
+    color: #bdc3c7;
+}
+
+.fields {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 20px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-    backdrop-filter: blur(10px);
+    gap: 16px;
 }
 
-.title { margin: 0; font-size: 28px; }
-.subtitle { margin: 0; opacity: 0.8; font-size: 14px; }
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #7f8c8d;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 6px;
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    box-sizing: border-box;
+}
 
-.fields { display: flex; flex-direction: column; gap: 12px; }
+input:focus {
+    border-color: #3498db;
+    outline: none;
+}
 
 .formError {
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: rgba(255, 0, 0, 0.12);
-    border: 1px solid rgba(255, 0, 0, 0.25);
-    font-size: 13px;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #e74c3c;
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 16px;
 }
 
-.divider {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 10px;
-    opacity: 0.7;
-    font-size: 12px;
+button {
+    padding: 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 16px;
 }
 
-.divider::before,
-.divider::after {
-    content: "";
-    height: 1px;
-    background: rgba(255,255,255,0.18);
+button[type="submit"],
+button[type="button"] {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+}
+
+button:disabled {
+    background-color: #7f8c8d;
+    cursor: not-allowed;
+}
+
+button[type="submit"] {
+    background-color: #3498db;
+    color: #fff;
+}
+
+button[type="submit"]:hover {
+    background-color: #2980b9;
+}
+
+button[type="button"] {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+button[type="button"]:hover {
+    background-color: #27ae60;
 }

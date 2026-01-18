@@ -10,10 +10,12 @@ export async function request<T>(
         headers?: Record<string, string>;
     } = {}
 ): Promise<T> {
+    const token = localStorage.getItem("token");
     const res = await fetch(`${API_BASE}${path}`, {
         method: options.method ?? "GET",
         headers: {
             "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...(options.headers ?? {}),
         },
         body: options.body ? JSON.stringify(options.body) : undefined,

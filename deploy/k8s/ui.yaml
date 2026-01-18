@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-login
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui-login
+  template:
+    metadata:
+      labels:
+        app: ui-login
+    spec:
+      containers:
+        - name: ui
+          image: ui-login:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-login
+spec:
+  selector:
+    app: ui-login
+  ports:
+    - port: 80
+      targetPort: 80
