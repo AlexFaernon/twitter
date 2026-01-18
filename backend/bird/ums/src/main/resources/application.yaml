@@ -1,0 +1,28 @@
+## Server
+server:
+  port: 9000
+
+## MySQL
+spring:
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://0.0.0.0:3306/ums?serverTimezone=UTC&useLegacyDatetimeCode=false
+    username: root
+    password: passw
+
+# GitHub OAuth (create an OAuth App in GitHub settings)
+oauth:
+  github:
+    client-id: ${GITHUB_CLIENT_ID:Ov23lifgrBbhXkr93GIP}
+    client-secret: ${GITHUB_CLIENT_SECRET:8b521ed48a7416dac2d023a881ea904e2459aeb4}
+    # This URL MUST be registered as "Authorization callback URL" in GitHub OAuth App
+    redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:9000/auth/github/callback}
+    # Where to redirect user after successful sign-in (frontend page)
+    frontend-redirect: ${FRONTEND_REDIRECT_URI:http://localhost:3000/}
+    scope: ${GITHUB_SCOPE:read:user user:email}
+
+security:
+  jwt:
+    secret: change-me
+    issuer: ums
+    ttl-seconds: 86400
