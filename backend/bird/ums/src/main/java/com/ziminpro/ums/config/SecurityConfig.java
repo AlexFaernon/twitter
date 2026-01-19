@@ -34,9 +34,9 @@ public class SecurityConfig {
 
                 .authorizeExchange(ex -> ex
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
                         .pathMatchers("/auth/**").permitAll()
-
+                        .pathMatchers(HttpMethod.POST, "/users/user").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/users/user/**").hasRole("ADMIN")
                         .anyExchange().authenticated()
                 )
 

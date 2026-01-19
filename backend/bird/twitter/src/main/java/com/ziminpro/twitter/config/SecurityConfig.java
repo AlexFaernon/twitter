@@ -33,6 +33,9 @@ public class SecurityConfig {
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .authorizeExchange(ex -> ex
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/messages/**").hasAnyRole("PRODUCER", "ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/messages/**").hasAnyRole("PRODUCER", "ADMIN")
+                        .pathMatchers("/subscriptions/**").hasAnyRole("SUBSCRIBER", "ADMIN")
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)

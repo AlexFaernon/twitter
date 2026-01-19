@@ -145,4 +145,20 @@ public class SubscriptionsService {
                             .body(response));
                 });
     }
+
+    private Mono<ResponseEntity<Map<String, Object>>> forbidden(String message) {
+        return Mono.just(ResponseEntity.status(403).body(Map.of(
+                Constants.CODE, "403",
+                Constants.MESSAGE, message,
+                Constants.DATA, Map.of()
+        )));
+    }
+
+    private Mono<ResponseEntity<Map<String, Object>>> ok(String code, String message, Object data) {
+        return Mono.just(ResponseEntity.ok(Map.of(
+                Constants.CODE, code,
+                Constants.MESSAGE, message,
+                Constants.DATA, data == null ? Map.of() : data
+        )));
+    }
 }

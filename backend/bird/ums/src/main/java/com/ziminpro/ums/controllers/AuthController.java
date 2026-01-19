@@ -1,8 +1,10 @@
 package com.ziminpro.ums.controllers;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.ziminpro.ums.auth.GitHubOAuthService;
 import com.ziminpro.ums.auth.JwtService;
@@ -50,7 +52,7 @@ public class AuthController {
         if (request == null
                 || request.login() == null || request.login().isBlank()
                 || request.password() == null || request.password().isBlank()) {
-            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).<LoginResponse>build());
+            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
         }
 
         String login = request.login().trim();
@@ -77,7 +79,14 @@ public class AuthController {
                                 .<LoginResponse>build();
                     }
 
-                    String token = jwtService.issueToken(user.getId(), user.getEmail());
+                    List<String> rolesString = user.getRoles() == null ? List.of() :
+                            user.getRoles().stream()
+                                    .map(Roles::getRole)
+                                    .filter(r -> r != null && !r.isBlank())
+                                    .distinct()
+                                    .collect(Collectors.toList());
+
+                    String token = jwtService.issueToken(user.getId(), user.getEmail(), rolesString);
                     return ResponseEntity.ok(new LoginResponse(token));
                 })
                 .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
@@ -140,7 +149,14 @@ public class AuthController {
                         user = createUserFromGithub(profile.name(), email);
                     }
 
-                    String token = jwtService.issueToken(user.getId(), email);
+                    List<String> rolesString = user.getRoles() == null ? List.of() :
+                            user.getRoles().stream()
+                                    .map(Roles::getRole)
+                                    .filter(r -> r != null && !r.isBlank())
+                                    .distinct()
+                                    .collect(Collectors.toList());
+
+                    String token = jwtService.issueToken(user.getId(), email, rolesString);
 
                     return ResponseEntity.status(HttpStatus.FOUND)
                             .header(HttpHeaders.SET_COOKIE, clearStateCookie.toString())
@@ -153,10 +169,13 @@ public class AuthController {
     private User createUserFromGithub(String name, String email) {
         Map<String, Roles> roles = umsRepository.findAllRoles();
 
-        Roles defaultRole = roles.getOrDefault("USER",
-                roles.getOrDefault("ROLE_USER",
-                        roles.values().stream().findFirst().orElse(new Roles(null, "USER", "Default"))
-                ));
+        Roles defaultRole = roles.getOrDefault("PRODUCER",
+                roles.getOrDefault("ROLE_PRODUCER",
+                        roles.values().stream()
+                                .findFirst()
+                                .orElse(new Roles(null, "PRODUCER", "Default"))
+                )
+        );
 
         User user = new User();
         user.setName((name == null || name.isBlank()) ? email : name);

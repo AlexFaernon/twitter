@@ -1,6 +1,7 @@
 package com.ziminpro.twitter.security;
 
 import java.util.Collections;
+import java.util.List;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -60,14 +62,22 @@ public class JwtWebFilter implements WebFilter {
 
             DecodedJWT jwt = verifier.verify(token);
 
-            String subject = jwt.getSubject();
-            String email = jwt.getClaim("email").asString();
+            String principal = jwt.getSubject();
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            subject != null ? subject : (email != null ? email : "user"),
+            List<String> roles = jwt.getClaim("roles").asList(String.class);
+
+            List<SimpleGrantedAuthority> authorities =
+                    roles == null ? List.of() :
+                            roles.stream()
+                                    .filter(r -> r != null && !r.isBlank())
+                                    .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                                    .map(SimpleGrantedAuthority::new)
+                                    .toList();
+
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            principal,
                             null,
-                            Collections.emptyList()
+                            authorities
                     );
 
             return chain.filter(exchange)

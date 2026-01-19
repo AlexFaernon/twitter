@@ -16,7 +16,9 @@ import com.ziminpro.twitter.dtos.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Mono;
@@ -36,31 +38,50 @@ public class MessagesService {
     Map<String, Object> response = new HashMap<>();
 
     public Mono<ResponseEntity<Map<String, Object>>> createMessage(Message message, String authorization) {
-        return umsConnector
-                .retrieveUmsData(uriUser + "/" + message.getAuthor().toString(), authorization)
-                .flatMap(res -> {
-                    UUID messageId = null;
-                    User user = HttpResponseExtractor.extractDataFromHttpClientResponse(res, User.class);
+        return extractUserIdFromSecurityContext()
+                .flatMap(userIdFromToken -> {
+                    return umsConnector
+                            .retrieveUmsData(uriUser + "/" + message.getAuthor().toString(), authorization)
+                            .flatMap(res -> {
+                                UUID messageId = null;
+                                User user = HttpResponseExtractor.extractDataFromHttpClientResponse(res, User.class);
 
-                    if (user.hasRole(Roles.PRODUCER)) {
-                        messageId = messageRepository.createMessage(message);
-                    }
+                                // проверка на автора
+                                if (!user.getId().toString().equals(userIdFromToken)) {
+                                    response.put(Constants.CODE, "403");
+                                    response.put(Constants.MESSAGE, "You are not authorized to create message for this user");
+                                    response.put(Constants.DATA, "Permission denied");
+                                    return Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                            .header(HttpHeaders.CONTENT_TYPE, Constants.APPLICATION_JSON)
+                                            .header(Constants.ACCEPT, Constants.APPLICATION_JSON)
+                                            .body(response));
+                                }
 
-                    if (messageId == null) {
-                        response.put(Constants.CODE, "400");
-                        response.put(Constants.MESSAGE, "Message has not been created");
-                        response.put(Constants.DATA, "Something went wrong");
-                    } else {
-                        response.put(Constants.CODE, "201");
-                        response.put(Constants.MESSAGE, "Message has been created");
-                        response.put(Constants.DATA, messageId.toString());
-                    }
+                                if (user.hasRole(Roles.PRODUCER)) {
+                                    messageId = messageRepository.createMessage(message);
+                                }
 
-                    return Mono.just(ResponseEntity.ok()
-                            .header(HttpHeaders.CONTENT_TYPE, Constants.APPLICATION_JSON)
-                            .header(Constants.ACCEPT, Constants.APPLICATION_JSON)
-                            .body(response));
+                                if (messageId == null) {
+                                    response.put(Constants.CODE, "400");
+                                    response.put(Constants.MESSAGE, "Message has not been created");
+                                    response.put(Constants.DATA, "Something went wrong");
+                                } else {
+                                    response.put(Constants.CODE, "201");
+                                    response.put(Constants.MESSAGE, "Message has been created");
+                                    response.put(Constants.DATA, messageId.toString());
+                                }
+
+                                return Mono.just(ResponseEntity.ok()
+                                        .header(HttpHeaders.CONTENT_TYPE, Constants.APPLICATION_JSON)
+                                        .header(Constants.ACCEPT, Constants.APPLICATION_JSON)
+                                        .body(response));
+                            });
                 });
+    }
+
+    private Mono<String> extractUserIdFromSecurityContext() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(securityContext -> securityContext.getAuthentication().getName());
     }
 
     public Mono<ResponseEntity<Map<String, Object>>> getMessagebyId(UUID messageId, String authorization) {
@@ -130,21 +151,48 @@ public class MessagesService {
     }
 
     public Mono<ResponseEntity<Map<String, Object>>> deleteMessageById(UUID messageId, String authorization) {
-        int result = messageRepository.deleteMessageById(messageId);
+        return extractUserIdFromSecurityContext()
+                .flatMap(userIdFromToken -> {
+                    Message message = messageRepository.getMessagebyId(messageId);
 
-        if (result != 1) {
-            response.put(Constants.CODE, "500");
-            response.put(Constants.MESSAGE, "Message " + messageId.toString() + " has not been deleted");
-            response.put(Constants.DATA, false);
-        } else {
-            response.put(Constants.CODE, "200");
-            response.put(Constants.MESSAGE, "Message " + messageId.toString() + " successfully deleted");
-            response.put(Constants.DATA, true);
-        }
+                    if (message == null) {
+                        response.put(Constants.CODE, "404");
+                        response.put(Constants.MESSAGE, "Message not found");
+                        response.put(Constants.DATA, message);
+                        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .header(HttpHeaders.CONTENT_TYPE, Constants.APPLICATION_JSON)
+                                .header(Constants.ACCEPT, Constants.APPLICATION_JSON)
+                                .body(response));
+                    }
 
-        return Mono.just(ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_TYPE, Constants.APPLICATION_JSON)
-                .header(Constants.ACCEPT, Constants.APPLICATION_JSON)
-                .body(response));
+                    // проверка на автора
+                    if (!message.getAuthor().toString().equals(userIdFromToken)) {
+                        response.put(Constants.CODE, "403");
+                        response.put(Constants.MESSAGE, "You are not authorized to delete this message");
+                        response.put(Constants.DATA, "Permission denied");
+                        return Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .header(HttpHeaders.CONTENT_TYPE, Constants.APPLICATION_JSON)
+                                .header(Constants.ACCEPT, Constants.APPLICATION_JSON)
+                                .body(response));
+                    }
+
+                    int result = messageRepository.deleteMessageById(messageId);
+
+                    if (result != 1) {
+                        response.put(Constants.CODE, "500");
+                        response.put(Constants.MESSAGE, "Message " + messageId.toString() + " has not been deleted");
+                        response.put(Constants.DATA, false);
+                    } else {
+                        response.put(Constants.CODE, "200");
+                        response.put(Constants.MESSAGE, "Message " + messageId.toString() + " successfully deleted");
+                        response.put(Constants.DATA, true);
+                    }
+
+                    return Mono.just(ResponseEntity.ok()
+                            .header(HttpHeaders.CONTENT_TYPE, Constants.APPLICATION_JSON)
+                            .header(Constants.ACCEPT, Constants.APPLICATION_JSON)
+                            .body(response));
+                });
     }
+
 }
